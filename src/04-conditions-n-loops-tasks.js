@@ -393,11 +393,19 @@ function toNaryString(num, n) {
  *   ['/web/favicon.ico', '/web-scripts/dump', '/verbalizer/logs'] => '/'
  */
 function getCommonDirectoryPath(pathes) {
-  const str = pathes.map((path) => path.split('/'))
-    .map((path) => path.map((value) => (value === '' ? '/' : value)))
-    .reduce((acc, a) => acc.filter((b) => a.includes(b))).join('/');
-  if (str.length === 0) return '';
-  return `${str.slice(1)}/`;
+  if (pathes.length === 0) return '';
+
+  const splitPaths = pathes.map((path) => path.split('/'));
+
+  const commonPrefixLength = splitPaths.reduce((length, pathComponents) => {
+    const isCommonPrefix = pathComponents.slice(0, length).length === length
+    && splitPaths[0].slice(0, length).every((part, index) => part === pathComponents[index]);
+    return isCommonPrefix
+      ? length
+      : splitPaths[0].slice(0, length).findIndex((part, index) => part !== pathComponents[index]);
+  }, splitPaths[0].length);
+
+  return splitPaths[0].slice(0, commonPrefixLength).join('/') + (commonPrefixLength > 0 ? '/' : '');
 }
 
 
@@ -473,19 +481,26 @@ function getMatrixProduct(m1, m2) {
  *
  */
 function evaluateTicTacToePosition(position) {
-  const checkLine = (line) => line.every((cell) => cell !== undefined && cell === line[0]);
+  const lines = [
+    // Rows
+    position[0],
+    position[1],
+    position[2],
+    // Columns
+    [position[0][0], position[1][0], position[2][0]],
+    [position[0][1], position[1][1], position[2][1]],
+    [position[0][2], position[1][2], position[2][2]],
+    // Diagonals
+    [position[0][0], position[1][1], position[2][2]],
+    [position[0][2], position[1][1], position[2][0]],
+  ];
 
-  // Check rows and columns
-  for (let i = 0; i < 3; i + 1) {
-    if (checkLine(position[i])) return position[i][0];
-    if (checkLine([position[0][i], position[1][i], position[2][i]])) return position[0][i];
-  }
+  const winner = lines.find((line) => {
+    const [a, b, c] = line;
+    return a !== undefined && a === b && a === c;
+  });
 
-  // Check diagonals
-  if (checkLine([position[0][0], position[1][1], position[2][2]])) return position[0][0];
-  if (checkLine([position[0][2], position[1][1], position[2][0]])) return position[0][2];
-
-  return undefined;
+  return winner ? winner[0] : undefined;
 }
 
 
